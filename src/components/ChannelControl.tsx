@@ -80,7 +80,7 @@ export default function ChannelControl({
   }
 
   return (
-    <div className="group-box relative p-2 flex flex-col h-full min-h-40">
+    <div className="group-box relative p-2 flex flex-col h-full min-h-52">
       <div className="group-box-title text-xs">{channelName}</div>
 
       {/* Content with title spacing */}

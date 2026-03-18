@@ -76,7 +76,7 @@ export default function CustomVerticalSlider({
   return (
     <div
       ref={containerRef}
-      className="relative w-6 h-20 bg-gray-300 border border-gray-500 select-none"
+      className="relative w-6 h-32 bg-gray-300 border border-gray-500 select-none"
       onMouseDown={handleMouseDown}
       role="slider"
       aria-label={ariaLabel}
