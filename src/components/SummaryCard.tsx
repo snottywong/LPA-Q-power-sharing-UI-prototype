@@ -58,11 +58,6 @@ export default function SummaryCard({
           <span className="text-xs font-semibold text-gray-800">
             {isOverBudget ? 'Over' : 'OK'}
           </span>
-          {isOverBudget && (
-            <span className="text-xs text-red-700 font-semibold ml-auto">
-              +{Math.abs(remainingPower)}W
-            </span>
-          )}
         </div>
       </div>
     </div>

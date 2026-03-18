@@ -88,7 +88,7 @@ export default function CustomVerticalSlider({
       {/* Fill indicator - dark blue from bottom */}
       <div
         className="absolute bottom-0 left-0 right-0 bg-blue-700 pointer-events-none"
-        style={{ height: `${percentage}%`, transition: isDragging ? 'none' : 'height 0.05s linear' }}
+        style={{ height: `${percentage}%`, transition: isDragging ? 'none' : 'height 0.5s linear' }}
       />
 
       {/* Handle - small rectangle centered horizontally */}
@@ -96,7 +96,7 @@ export default function CustomVerticalSlider({
         className="absolute left-1/2 -translate-x-1/2 w-5 h-3 bg-gray-400 border border-gray-600 rounded-sm pointer-events-none"
         style={{
           bottom: `calc(${percentage}% - 6px)`,
-          transition: isDragging ? 'none' : 'bottom 0.05s linear',
+          transition: isDragging ? 'none' : 'bottom 0.5s linear',
         }}
       />
     </div>
