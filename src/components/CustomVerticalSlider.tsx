@@ -1,4 +1,5 @@
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useState } from 'react'
+import type { PointerEvent as ReactPointerEvent } from 'react'
 
 interface CustomVerticalSliderProps {
   value: number
@@ -16,7 +17,7 @@ interface CustomVerticalSliderProps {
  * - Single rectangular track
  * - Dark blue fill from bottom up
  * - Small rectangular draggable handle
- * - Smooth mouse-based interaction
+ * - Smooth pointer-based interaction for mouse and touch devices
  */
 export default function CustomVerticalSlider({
   value,
@@ -27,63 +28,96 @@ export default function CustomVerticalSlider({
   ariaLabel = 'Slider',
 }: CustomVerticalSliderProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const activePointerIdRef = useRef<number | null>(null)
   const [isDragging, setIsDragging] = useState(false)
 
   // Calculate percentage (0-100)
   const percentage = ((value - min) / (max - min)) * 100
 
-  // Handle mouse down on container or handle
-  const handleMouseDown = () => {
-    setIsDragging(true)
+  const updateValueFromClientY = (clientY: number) => {
+    if (!containerRef.current) return
+
+    const rect = containerRef.current.getBoundingClientRect()
+    // Calculate position from bottom (0 = bottom, 100 = top)
+    const distanceFromBottom = rect.bottom - clientY
+    const trackHeight = rect.height
+    let newPercentage = (distanceFromBottom / trackHeight) * 100
+
+    // Clamp to 0-100
+    newPercentage = Math.max(0, Math.min(100, newPercentage))
+
+    // Convert percentage back to value
+    let newValue = min + (newPercentage / 100) * (max - min)
+
+    // Snap to step
+    newValue = Math.round(newValue / step) * step
+
+    onChange(newValue)
   }
 
-  // Handle mouse move anywhere on document when dragging
-  useEffect(() => {
-    if (!isDragging || !containerRef.current) return
+  const finishDrag = (pointerId: number) => {
+    if (activePointerIdRef.current !== pointerId) return
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = containerRef.current!.getBoundingClientRect()
-      // Calculate position from bottom (0 = bottom, 100 = top)
-      const distanceFromBottom = rect.bottom - e.clientY
-      const trackHeight = rect.height
-      let newPercentage = (distanceFromBottom / trackHeight) * 100
-
-      // Clamp to 0-100
-      newPercentage = Math.max(0, Math.min(100, newPercentage))
-
-      // Convert percentage back to value
-      let newValue = min + (newPercentage / 100) * (max - min)
-
-      // Snap to step
-      newValue = Math.round(newValue / step) * step
-
-      onChange(newValue)
+    if (containerRef.current?.hasPointerCapture(pointerId)) {
+      containerRef.current.releasePointerCapture(pointerId)
     }
 
-    const handleMouseUp = () => {
-      setIsDragging(false)
+    activePointerIdRef.current = null
+    setIsDragging(false)
+  }
+
+  // Handle pointer down on container or handle
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+
+    if (event.cancelable) {
+      event.preventDefault()
     }
 
-    document.addEventListener('mousemove', handleMouseMove)
-    document.addEventListener('mouseup', handleMouseUp)
+    activePointerIdRef.current = event.pointerId
+    containerRef.current?.setPointerCapture(event.pointerId)
+    setIsDragging(true)
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove)
-      document.removeEventListener('mouseup', handleMouseUp)
+    if (event.pointerType !== 'mouse') {
+      updateValueFromClientY(event.clientY)
     }
-  }, [isDragging, min, max, step, onChange])
+  }
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!isDragging || activePointerIdRef.current !== event.pointerId) return
+
+    if (event.cancelable) {
+      event.preventDefault()
+    }
+
+    updateValueFromClientY(event.clientY)
+  }
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    finishDrag(event.pointerId)
+  }
+
+  const handlePointerCancel = (event: ReactPointerEvent<HTMLDivElement>) => {
+    finishDrag(event.pointerId)
+  }
 
   return (
     <div
       ref={containerRef}
       className="relative w-6 h-32 bg-gray-300 border border-gray-500 select-none"
-      onMouseDown={handleMouseDown}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      onLostPointerCapture={handlePointerCancel}
       role="slider"
       aria-label={ariaLabel}
       aria-valuemin={min}
       aria-valuemax={max}
       aria-valuenow={value}
+      aria-orientation="vertical"
       tabIndex={0}
+      style={{ touchAction: 'none' }}
     >
       {/* Fill indicator - dark blue from bottom */}
       <div
